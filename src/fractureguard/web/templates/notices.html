@@ -1,0 +1,14 @@
+{% if notices %}
+<section class="panel notices" aria-labelledby="notice-heading">
+  <h2 id="notice-heading">Recent notifications</h2>
+  <ul>
+    {% for notice in notices %}<li>
+      {% if user.role == 'demo' %}<a href="{% url 'case_detail' notice.case_id %}">{{ notice.case.reference }}</a>
+      {% elif notice.case.reviewer_id == user.id %}<a href="{% url 'review' notice.case_id %}">{{ notice.case.reference }}</a>
+      {% else %}{{ notice.case.reference }}{% endif %}
+      <span>{% if notice.event == 'ready' %}Ready in the review queue{% elif notice.event == 'assigned' %}Assigned to you{% elif notice.event == 'returned' %}Replacement requested{% else %}Report released{% endif %}</span>
+      <time datetime="{{ notice.created|date:'c' }}">{{ notice.created|date:'d M, H:i' }} UTC</time>
+    </li>{% endfor %}
+  </ul>
+</section>
+{% endif %}

@@ -1,0 +1,28 @@
+datasets:
+  grazpedwri:
+    display_name: GRAZPEDWRI-DX
+    role: primary
+    figshare_article_id: 14825193
+    repository_url: https://doi.org/10.6084/m9.figshare.14825193
+    paper_url: https://www.nature.com/articles/s41597-022-01328-z
+    license: CC BY 4.0
+    expected_modality: xray
+    expected_anatomy: pediatric_wrist_distal_forearm
+
+  fracatlas:
+    display_name: FracAtlas
+    role: external_robustness
+    figshare_article_id: 22363012
+    repository_url: https://doi.org/10.6084/m9.figshare.22363012
+    paper_url: https://www.nature.com/articles/s41597-023-02432-4
+    license: CC BY 4.0
+    expected_modality: xray
+    expected_anatomy: musculoskeletal_multi_region
+
+  bonefract:
+    display_name: BoneFract
+    role: optional_supplementary
+    repository_url: https://data.mendeley.com/datasets/4cr7f2359x/1
+    license: CC BY 4.0
+    expected_modality: xray
+    expected_anatomy: musculoskeletal_multi_region

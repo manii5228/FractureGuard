@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ case.reference }}{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="{% url 'home' %}">My cases</a> / {{ case.reference }}</p>
+<div class="page-heading">
+  <div><p class="eyebrow">Wrist study</p><h1>{{ case.reference }}</h1>{% if case.side %}<p>{{ case.get_side_display }} wrist · Revision {{ case.revision }}</p>{% endif %}</div>
+  <span class="state state-{{ case.status }}" role="status" id="status-label" {% if case.status == 'queued' or case.status == 'processing' %}data-status-url="{% url 'case_status' case.pk %}"{% endif %}>{{ label }}</span>
+</div>
+{% if error %}<p role="alert" class="callout error">{{ error }}</p>{% endif %}
+{% if return_note %}<p role="status" class="callout warning"><strong>Replacement requested.</strong> {{ return_note }}</p>{% endif %}
+{% if upload_open %}
+<form class="stack" method="post" enctype="multipart/form-data" data-upload>{% csrf_token %}
+  {% if case.status == 'returned' %}<p>Replace either view. A blank upload slot keeps the view from the previous submission.</p>{% endif %}
+  <section class="panel form-panel">
+    <h2>Study details</h2>
+    <label class="constrained"><span id="side-label">Side</span><select name="side" aria-labelledby="side-label" required><option value="">Choose one</option><option value="L" {% if case.side == 'L' %}selected{% endif %}>Left wrist</option><option value="R" {% if case.side == 'R' %}selected{% endif %}>Right wrist</option></select></label>
+  </section>
+  <section aria-labelledby="upload-heading">
+    <h2 id="upload-heading">Radiograph views</h2><p class="muted" id="upload-help">8-bit or 16-bit grayscale PNG, up to 10 MiB and 8 megapixels per file.</p>
+    <div class="two-up">
+      <div class="panel form-panel"><h3>AP/PA</h3><p class="muted">Frontal view of the wrist.</p><img class="upload-preview" id="frontal-preview" alt="Selected frontal radiograph" hidden><label>Frontal PNG<input type="file" name="frontal" accept="image/png,.png" {% if case.status == 'draft' %}required{% endif %} data-preview="frontal-preview" {% if errors.frontal %}aria-invalid="true"{% endif %} aria-describedby="upload-help frontal-error"></label><p class="field-error" id="frontal-error">{{ errors.frontal }}</p></div>
+      <div class="panel form-panel"><h3>Lateral</h3><p class="muted">Side view from the same study.</p><img class="upload-preview" id="lateral-preview" alt="Selected lateral radiograph" hidden><label>Lateral PNG<input type="file" name="lateral" accept="image/png,.png" {% if case.status == 'draft' %}required{% endif %} data-preview="lateral-preview" {% if errors.lateral %}aria-invalid="true"{% endif %} aria-describedby="upload-help lateral-error"></label><p class="field-error" id="lateral-error">{{ errors.lateral }}</p></div>
+    </div>
+  </section>
+  <label class="check"><input type="checkbox" name="attest" value="yes" required>Both views are from the same study and side. I checked the files and visible image text for identifiers.</label>
+  <div class="actions"><button type="submit" class="primary" {% if not controls.model_enabled %}disabled{% endif %}>Submit for review</button><span id="upload-progress" role="status"></span>{% if not controls.model_enabled %}<span>Processing is currently paused.</span>{% endif %}</div>
+</form>
+{% else %}
+<section class="panel form-panel status-panel">
+  {% if case.status == 'released' %}<h2>Report ready</h2><p>Your reviewer-approved report is available.</p><div class="actions"><a class="button primary" href="{% url 'released_report' case.pk %}">Read report</a><a class="button" href="{% url 'download' case.pk %}">Download PDF</a></div>
+  {% elif case.status == 'withdrawn' %}<h2>Report withdrawn</h2><p>The report is unavailable while the reviewer checks the findings.</p>
+  {% elif case.status == 'failed' %}<h2>Processing failed</h2><p>Your reviewer can retry processing or request a replacement. This status carries no report result.</p>
+  {% elif case.status == 'queued' or case.status == 'processing' %}<h2>Preparing your study</h2><p>The case will enter the review queue after processing.</p>
+  {% else %}<h2>In review</h2><p>The report becomes available once the reviewer releases it.</p>{% endif %}
+</section>
+{% endif %}
+{% if case.deletion_requested %}<p class="muted">Deletion requested. An administrator will review the request.</p>{% else %}<form method="post" action="{% url 'request_deletion' case.pk %}" class="case-deletion">{% csrf_token %}<button class="quiet" type="submit">Request case deletion</button></form>{% endif %}
+{% endblock %}

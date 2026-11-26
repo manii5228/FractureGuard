@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Workspace{% endblock %} · FractureGuard</title>
+  <link rel="stylesheet" href="{% url 'static_file' 'style.css' %}">
+  <script src="{% url 'static_file' 'app.js' %}" defer></script>
+</head>
+<body>
+  <a href="#content" class="skip">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="{% url 'home' %}"><span class="brand-mark" aria-hidden="true">FG</span> FractureGuard</a>
+      {% if user.is_authenticated %}
+        <nav class="primary-nav" aria-label="Workspace">
+          {% if user.role == 'demo' %}<a href="{% url 'home' %}">My cases</a>{% endif %}
+          {% if user.role == 'reviewer' %}<a href="{% url 'queue' %}">Review queue</a>{% endif %}
+          {% if user.role == 'admin' %}<a href="{% url 'operations' %}">Operations</a>{% endif %}
+        </nav>
+        <div class="account"><span>{{ user.username }} <small>{{ user.get_role_display }}</small></span>
+          <form method="post" action="{% url 'sign_out' %}">{% csrf_token %}<button class="quiet" type="submit">Sign out</button></form>
+        </div>
+      {% else %}
+        <span class="muted">University research prototype</span>
+      {% endif %}
+    </div>
+  </header>
+  <main id="content" class="page {% block page_class %}{% endblock %}" tabindex="-1">
+    {% for message in messages %}<p role="status" class="callout {{ message.tags }}">{{ message }}</p>{% endfor %}
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer">FractureGuard · University research prototype · De-identified demo cases only</footer>
+</body>
+</html>

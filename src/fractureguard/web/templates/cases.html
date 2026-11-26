@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}My cases{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">Submission workspace</p><h1>My cases</h1><p>Upload a paired wrist study and check when its reviewer-approved report is available.</p></div>
+  <form method="post" action="{% url 'new_case' %}">{% csrf_token %}<button class="primary" type="submit">New case</button></form>
+</div>
+<section class="panel data-panel" aria-label="Cases">
+  {% if cases %}<div class="table-wrap"><table>
+    <thead><tr><th scope="col">Case reference</th><th scope="col">Latest submission (UTC)</th><th scope="col">Status</th><th scope="col">Next action</th></tr></thead>
+    <tbody>{% for case in cases %}<tr><th scope="row">{{ case.reference }}</th><td>{% if case.last_submitted %}{{ case.last_submitted|date:'d M Y, H:i' }}{% else %}—{% endif %}</td><td><span class="state state-{{ case.status }}">{% if case.status == 'signed' %}Awaiting release{% elif case.status == 'reviewed' %}Awaiting reviewer approval{% else %}{{ case.get_status_display }}{% endif %}</span></td><td><a href="{% url 'case_detail' case.pk %}">{% if case.status == 'draft' %}Add images{% elif case.status == 'returned' %}Replace images{% elif case.status == 'released' %}Open report{% else %}View status{% endif %}</a></td></tr>{% endfor %}</tbody>
+  </table></div>{% else %}<div class="empty"><h2>No cases yet</h2><p>Create a case when your AP/PA and lateral PNGs are ready.</p></div>{% endif %}
+</section>
+{% include 'notices.html' %}
+{% endblock %}

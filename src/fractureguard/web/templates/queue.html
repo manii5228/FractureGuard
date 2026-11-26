@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Review queue{% endblock %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">Reviewer workspace</p><h1>Review queue</h1><p>Claim a case to inspect its views and prepare a report.</p></div></div>
+<form class="filter-row panel" method="get" aria-label="Filter review queue">
+  <label>Status<select name="status"><option value="">All active</option>{% for value, label in statuses %}<option value="{{ value }}" {% if value == chosen_status %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label>Assignment<select name="assignment"><option value="">All active cases</option><option value="mine" {% if assignment == 'mine' %}selected{% endif %}>Assigned to me</option><option value="unassigned" {% if assignment == 'unassigned' %}selected{% endif %}>Unassigned</option></select></label>
+  <button type="submit">Apply filters</button>
+</form>
+<section class="panel data-panel" aria-label="Review cases">
+{% if cases %}<div class="table-wrap"><table>
+  <thead><tr><th scope="col">Case</th><th scope="col">Waiting</th><th scope="col">Status</th><th scope="col">Assignment</th><th scope="col">Action</th></tr></thead>
+  <tbody>{% for case in cases %}<tr>
+    <th scope="row">{{ case.reference }}</th><td>{{ case.last_submitted|timesince }}</td>
+    <td><span class="state state-{{ case.status }}">{{ case.get_status_display }}</span>{% if case.priority %}<span class="attention">Needs attention</span>{% endif %}</td>
+    <td>{% if case.reviewer_id == user.id %}You{% elif case.reviewer %}{{ case.reviewer.username }}{% else %}Unassigned{% endif %}</td>
+    <td>{% if case.reviewer_id == user.id %}<a href="{% url 'review' case.pk %}">Open review</a>{% elif not case.reviewer %}<form method="post" action="{% url 'claim' case.pk %}">{% csrf_token %}<button type="submit">Claim case</button></form>{% else %}<span class="muted">Assigned</span>{% endif %}</td>
+  </tr>{% endfor %}</tbody>
+</table></div>{% else %}<div class="empty"><h2>No matching cases</h2><p>Cases appear here when processing finishes or needs attention.</p></div>{% endif %}
+</section>
+{% include 'notices.html' %}
+{% endblock %}

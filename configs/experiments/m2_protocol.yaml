@@ -1,0 +1,41 @@
+milestone: 2
+objective: single_view_fracture_detection_baselines
+dataset_manifest: data/manifests/grazpedwri_m2_cohort.csv
+test_split_policy: excluded_until_pipeline_freeze
+preprocessing_screen:
+  model: yolo26n.pt
+  image_size: 640
+  epochs: 25
+  patience: 7
+  variants:
+    - percentile_1_99
+    - percentile_1_99_clahe
+    - full_range
+  selection_metric: metrics/mAP50-95(B)
+detector_comparison:
+  image_size: 640
+  epochs: 100
+  patience: 20
+  models:
+    - yolo11n.pt
+    - yolo26n.pt
+    - yolo26s.pt
+  selection_metric: metrics/mAP50-95(B)
+seed: 42
+batch: 16
+augmentations:
+  degrees: 7.0
+  translate: 0.05
+  scale: 0.10
+  fliplr: 0.0
+  flipud: 0.0
+  mosaic: 0.2
+  hsv_h: 0.0
+  hsv_s: 0.0
+  hsv_v: 0.15
+  perspective: 0.0
+  shear: 0.0
+notes:
+  - No vertical flips or laterality-changing horizontal flips.
+  - No test-set access for preprocessing, model, threshold, or epoch selection.
+  - CPU smoke training is a pipeline check, not a reported research result.

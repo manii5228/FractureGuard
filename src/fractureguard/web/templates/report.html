@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Report {{ case.reference }}{% endblock %}
+{% block content %}
+<p class="breadcrumb">{% if staff %}<a href="{% url 'review' case.pk %}">Review {{ case.reference }}</a>{% else %}<a href="{% url 'case_detail' case.pk %}">{{ case.reference }}</a>{% endif %} / Report</p>
+<div class="page-heading"><div><h1>Wrist study report</h1><p>{{ case.reference }} · Study revision {{ snapshot.revision }} · Report version {{ snapshot.version }}{% if snapshot.version > 1 %} · Amended{% endif %}</p></div><span class="state state-{{ case.status }}">{{ case.get_status_display }}</span></div>
+<article class="panel report-body">
+  <dl class="report-fields">
+    <dt>Examination</dt><dd>{{ snapshot.side }} wrist radiographs · AP/PA and lateral</dd>
+    <dt>Technical limitations</dt><dd>{{ snapshot.limitations|default:"None recorded" }}</dd>
+    <dt>Reviewer findings</dt><dd>{{ snapshot.findings }}</dd>
+    <dt>Reviewer notes</dt><dd>{{ snapshot.notes|default:"None recorded" }}</dd>
+    <dt>Final impression</dt><dd>{{ snapshot.impression }}</dd>
+    <dt>{% if case.status == 'reviewed' %}Signing reviewer{% else %}Signed by{% endif %}</dt><dd>{{ snapshot.signer }} · {{ snapshot.signed_at }}</dd>
+  </dl>
+  <p class="callout">University research prototype. For demonstration only. Do not use for diagnosis or treatment.</p>
+  {% if staff %}<a href="{% url 'staff_pdf' case.pk %}" class="button">Open PDF preview</a>{% else %}<a href="{% url 'download' case.pk %}" class="button primary">Download PDF</a>{% endif %}
+</article>
+{% if staff and case.status == 'reviewed' %}
+<section class="panel form-panel report-action"><h2>Sign report</h2><p>Signing locks this version. A separate release makes it available to the case owner.</p>
+  <form class="stack" action="{% url 'sign_report' case.pk %}" method="post">{% csrf_token %}<input type="hidden" name="edit_version" value="{{ case.edit_version }}"><input type="hidden" name="study_revision" value="{{ snapshot.revision }}">
+    <label class="constrained">Your current password<input type="password" name="password" autocomplete="current-password" required maxlength="256"></label>
+    {% if needs_otp %}<label class="constrained">Fresh authenticator code<input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>{% endif %}
+    <button type="submit" class="primary">Sign report</button>
+  </form>
+</section>
+{% elif staff and case.status == 'signed' %}
+<section class="panel form-panel report-action"><h2>Release to case owner</h2><form class="stack" action="{% url 'release_report' case.pk %}" method="post">{% csrf_token %}<input type="hidden" name="study_revision" value="{{ snapshot.revision }}"><input type="hidden" name="report_version" value="{{ snapshot.version }}"><label class="check"><input type="checkbox" name="confirm" value="yes" required>Release the signed version shown above.</label><button type="submit" class="primary">Release report</button></form></section>
+{% elif staff and case.status == 'released' %}
+<section class="panel form-panel report-action"><h2>Withdraw report</h2><form class="stack" action="{% url 'withdraw_report' case.pk %}" method="post">{% csrf_token %}<input type="hidden" name="study_revision" value="{{ snapshot.revision }}"><input type="hidden" name="report_version" value="{{ snapshot.version }}"><label class="check"><input type="checkbox" name="confirm" value="yes" required>Remove the case owner's access to this release.</label><button type="submit" class="danger">Withdraw release</button></form></section>
+{% endif %}
+{% endblock %}

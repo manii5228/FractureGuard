@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{% if mode == 'recover' %}Account access{% elif mode == 'mfa' %}Verify sign-in{% else %}Sign in{% endif %}{% endblock %}
+{% block page_class %}auth-page{% endblock %}
+{% block content %}
+<section class="auth-intro">
+  <p class="eyebrow">Pediatric wrist radiographs</p>
+  <h1>FractureGuard workspace</h1>
+  <p>Submit two views of a study or review a case assigned to you.</p>
+  <p class="restriction">Use approved de-identified demo images. This prototype is for research and coursework.</p>
+</section>
+<section class="panel auth-panel">
+  {% if error %}<p class="callout error" role="alert">{{ error }}</p>{% endif %}
+  {% if mode == 'recover' %}
+    <h2>Set your password</h2>
+    <p>Enter the one-time access code from your administrator.</p>
+    <form method="post" class="stack">{% csrf_token %}
+      <label>Access code<input name="token" required autocomplete="off" maxlength="100"></label>
+      <label>New password<input name="password" type="password" required autocomplete="new-password" maxlength="256"></label>
+      <label>Confirm password<input name="confirm" type="password" required autocomplete="new-password" maxlength="256"></label>
+      <button class="primary" type="submit">Save password</button>
+    </form>
+    <p><a href="{% url 'sign_in' %}">Return to sign in</a></p>
+  {% elif mode == 'mfa' %}
+    <h2>Verify sign-in</h2>
+    {% if secret %}<p>Add this setup key to your authenticator app.</p><p class="token">{{ secret }}</p>{% endif %}
+    <form method="post" class="stack">{% csrf_token %}
+      <label>Authenticator code<input name="code" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" required></label>
+      <button type="submit" class="primary">Verify</button>
+    </form>
+  {% else %}
+    <h2>Sign in</h2>
+    <form method="post" class="stack">{% csrf_token %}
+      <label>Account name<input name="username" autocomplete="username" maxlength="150" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" maxlength="256" required></label>
+      <button class="primary" type="submit">Sign in</button>
+    </form>
+    <p><a href="{% url 'recover' %}">Use an invitation or recovery code</a></p>
+  {% endif %}
+</section>
+{% endblock %}

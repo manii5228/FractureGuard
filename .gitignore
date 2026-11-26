@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.egg-info/
+*.py[cod]
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+.tools/
+work/
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Datasets and generated artifacts
+data/raw/**
+data/derived/**
+data/cache/**
+!data/raw/.gitkeep
+!data/derived/.gitkeep
+!data/cache/.gitkeep
+models/**
+!models/.gitkeep
+reports/figures/**
+reports/tables/**
+reports/predictions/**
+!reports/figures/.gitkeep
+!reports/tables/.gitkeep
+!reports/predictions/.gitkeep
+
+# Experiment tracking
+runs/
+wandb/
+mlruns/
+
+# Editors and operating systems
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

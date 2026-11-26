@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Review {{ case.reference }}{% endblock %}
+{% block page_class %}wide{% endblock %}
+{% block content %}
+<p class="breadcrumb"><a href="{% url 'queue' %}">Review queue</a> / {{ case.reference }}</p>
+<div class="page-heading"><div><h1>{{ case.reference }}</h1><p>{{ case.get_side_display }} wrist · Study revision {{ revision.number }}</p></div><span class="state state-{{ case.status }}">{{ case.get_status_display }}</span></div>
+{% if case.status == 'failed' %}
+<p class="callout error" role="alert">Inference failed. The case has no preliminary result.</p>
+{% if revision.job.attempt < 3 %}<form method="post" action="{% url 'retry_case' case.pk %}">{% csrf_token %}<button type="submit">Retry processing</button></form>{% endif %}
+{% elif prediction.label %}
+<div class="callout {% if prediction.warnings or prediction.outcome == 'uncertain_manual_review' %}warning{% endif %}">
+  <span class="muted">Preliminary model result</span><br><strong>{{ prediction.label }}</strong> · Calibrated score {{ prediction.score_label }}
+  {% for warning in prediction.warnings %}<p>{{ warning }}</p>{% endfor %}
+</div>
+{% endif %}
+<div class="review-layout" data-review>
+  <section aria-label="Radiographs" class="viewer">
+    <div class="view-switch" aria-label="Select radiograph"><button type="button" data-switch="frontal" aria-pressed="true">AP/PA</button><button type="button" data-switch="lateral" aria-pressed="false">Lateral</button></div>
+    <div class="view-pair">
+      {% for asset in views %}
+      <section class="view-card" data-view="{{ asset.view }}" {% if asset.view == 'frontal' %}data-current{% endif %}>
+        <h2>{% if asset.view == 'frontal' %}AP/PA{% else %}Lateral{% endif %}<small>{{ case.get_side_display }} wrist</small></h2>
+        <div class="radiograph">
+          <svg viewBox="0 0 {{ asset.width }} {{ asset.height }}" role="img" aria-label="{{ case.get_side_display }} wrist {{ asset.get_view_display }}"><g data-image><image width="{{ asset.width }}" height="{{ asset.height }}" href="{% url 'asset_preview' asset.pk %}"/><g data-overlays></g></g></svg>
+        </div>
+        <div class="image-tools" role="group" aria-label="{{ asset.get_view_display }} viewer controls">
+          <button type="button" data-tool="in" aria-label="Zoom in">+</button><button type="button" data-tool="out" aria-label="Zoom out">−</button>
+          <button type="button" data-tool="left" aria-label="Pan left">←</button><button type="button" data-tool="up" aria-label="Pan up">↑</button><button type="button" data-tool="down" aria-label="Pan down">↓</button><button type="button" data-tool="right" aria-label="Pan right">→</button>
+          <button type="button" data-tool="reset">Reset</button><button type="button" data-tool="overlays" aria-pressed="true">Boxes</button>
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+  </section>
+  <section class="panel form-panel">
+    <h2>Reviewer findings</h2>
+    {{ findings.boxes|json_script:"review-boxes" }}
+    {% if editable %}
+    <form method="post" action="{% url 'save_review' case.pk %}" class="stack">{% csrf_token %}
+      <input type="hidden" name="edit_version" value="{{ case.edit_version }}">
+      <input type="hidden" name="study_revision" value="{{ revision.number }}">
+      <input type="hidden" name="boxes" id="boxes">
+      <fieldset><legend>Annotations</legend>
+        <label><span id="box-choice-label">Box</span><select id="box-choice" aria-labelledby="box-choice-label"><option value="">New box</option></select></label>
+        <label><span id="box-view-label">View</span><select id="box-view" aria-labelledby="box-view-label"><option value="frontal">AP/PA</option><option value="lateral">Lateral</option></select></label>
+        <div class="coords"><label>Left<input id="box-x1" type="number" step="any" min="0" inputmode="decimal"></label><label>Top<input id="box-y1" type="number" step="any" min="0" inputmode="decimal"></label><label>Right<input id="box-x2" type="number" step="any" min="0" inputmode="decimal"></label><label>Bottom<input id="box-y2" type="number" step="any" min="0" inputmode="decimal"></label></div>
+        <p id="box-help" class="muted">Coordinates use original image pixels. Approved boxes appear on the report.</p>
+        <div class="actions"><button type="button" data-box-action="update">Update</button><button type="button" data-box-action="approved">Approve / add</button><button type="button" data-box-action="rejected">Reject</button></div>
+        <p id="box-message" role="status" class="field-error"></p>
+      </fieldset>
+      <label>Findings<textarea name="findings" required maxlength="2000" rows="4">{{ findings.findings }}</textarea></label>
+      <label>Technical limitations<textarea name="limitations" maxlength="2000" rows="2">{{ findings.limitations }}</textarea></label>
+      <label>Reviewer notes<textarea name="notes" maxlength="2000" rows="2">{{ findings.notes }}</textarea></label>
+      <label>Final impression<textarea name="impression" required maxlength="2000" rows="3">{{ findings.impression }}</textarea></label>
+      <label class="check"><input type="checkbox" name="verify_views" value="yes" required>I verified both view labels and the side.</label>
+      <button class="primary" type="submit">Save and preview report</button>
+    </form>
+    {% elif signed %}<p>The signed report is available to the assigned reviewer.</p>{% else %}<p>Findings can be entered when this revision is ready for review.</p>{% endif %}
+    {% if case.status == 'reviewed' or case.status == 'signed' or case.status == 'released' or case.status == 'withdrawn' %}<p><a href="{% url 'report_preview' case.pk %}">Open report version</a></p>{% endif %}
+  </section>
+</div>
+{% if case.status == 'review_required' or case.status == 'reviewed' or case.status == 'failed' %}
+<details class="panel form-panel replacement"><summary>Request replacement images</summary>
+  <form class="stack" method="post" action="{% url 'return_case' case.pk %}">{% csrf_token %}<label>Reason visible to the case owner<textarea name="reason" maxlength="500" required rows="2"></textarea></label><button type="submit">Return to case owner</button></form>
+</details>
+{% endif %}
+{% endblock %}
